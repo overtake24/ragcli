@@ -1,0 +1,16 @@
+{
+  "DocumentResponse": {
+    "fields": {
+      "title": {"type": "str", "description": "Belgenin başlığı"},
+      "summary": {"type": "str", "description": "İçerik özeti"},
+      "key_points": {"type": "list[str]", "description": "Anahtar noktalar"}
+    }
+  },
+  "QuestionAnswer": {
+    "fields": {
+      "answer": {"type": "str", "description": "Sorunun cevabı"},
+      "confidence": {"type": "float", "description": "Cevabın güven değeri (0-1)"},
+      "references": {"type": "list[str]", "description": "Referans kaynaklar"}
+    }
+  }
+}
