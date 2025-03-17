@@ -1,1 +1,1 @@
-RAG (Retrieval-Augmented Generation) sistemleri, LLM'leri harici verilerle zenginleştirir.
+RAG sistemleri, LLM'leri harici verilerle zenginleştirir.

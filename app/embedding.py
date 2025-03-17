@@ -12,6 +12,7 @@ from app.db import get_db_connection
 from sentence_transformers import SentenceTransformer
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 from langchain_community.embeddings import SentenceTransformerEmbeddings
+from langchain_huggingface import HuggingFaceEmbeddings
 
 from app.config import EMBEDDING_MODEL
 
@@ -44,8 +45,9 @@ def get_embedding_model(model_name: str = DEFAULT_EMBEDDING_MODEL) -> SentenceTr
 
 def get_embeddings(model_name: str = DEFAULT_EMBEDDING_MODEL):
     """
-    Langchain uyumlu embedding nesnesini döndür
+    Langchain uyumlu embedding objesi döndür.
     """
+    from langchain_community.embeddings import SentenceTransformerEmbeddings
     return SentenceTransformerEmbeddings(model_name=model_name)
 
 

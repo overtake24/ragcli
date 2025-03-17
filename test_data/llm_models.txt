@@ -1,0 +1,6 @@
+# LLM Modelleri
+
+Büyük dil modelleri (LLM), milyarlarca parametreye sahip derin öğrenme modelleridir.
+Transformer mimarisi üzerine kurulu olan bu modeller, doğal dil işleme görevlerinde üstün başarı gösterirler.
+Gemma, Llama, GPT gibi farklı model aileleri bulunmaktadır.
+Her bir model farklı boyutlarda ve farklı güçte gelmektedir.

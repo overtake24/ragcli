@@ -1,0 +1,6 @@
+# RAG Sistemleri
+
+RAG (Retrieval-Augmented Generation) sistemleri, LLM'leri harici verilerle zenginleştiren sistemlerdir.
+Kullanıcı sorguları önce vektör veritabanında aranır ve ilgili belgeler bulunur.
+Ardından LLM, bulunan belgeleri kullanarak daha doğru ve bilgi içeren yanıtlar üretir.
+RAG sistemlerinin en büyük avantajı, hallüsinasyon sorununu azaltmasıdır.

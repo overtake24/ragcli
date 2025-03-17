@@ -1,0 +1,6 @@
+# Vektör Veritabanları
+
+Vektör veritabanları, yüksek boyutlu vektörleri ve benzerlik aramalarını destekleyen özel veritabanlarıdır.
+pgvector, PostgreSQL için bir uzantıdır ve vektör benzerlik aramalarını destekler.
+Embedding vektörleri, metin veya diğer verilerin sayısal temsilini oluşturur.
+Vektör uzaklıkları, kosinüs benzerliği veya öklit mesafesi ile hesaplanabilir.

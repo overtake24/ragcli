@@ -1,0 +1,93 @@
+# Scandinavia ve Nordik Bölgesi Seyahat Rehberi
+
+```bash
+# Önce scandinavia.txt dosyasını oluşturuyoruz:
+cat > ./test_data/scandinavia.txt << 'EOL'
+# Scandinavia and the Nordic Region: Planning Your Trip
+
+Scandinavia and the Nordic region are historical and geographical regions covering much of Northern Europe. Extending from above the Arctic Circle to the North and Baltic Seas, the Scandinavian Peninsula is the largest peninsula in Europe.
+
+Popular tourist destinations Denmark, Norway, Sweden, Finland, Iceland, and on occasion, Greenland, all make up the Nordic countries. (Three of them took the top three spots on the United Nations' World Happiness Report in 2021, with Finland being number one for the fourth year in a row.) As a whole, Scandinavia has some of the most beautiful landscapes in the world and is enriched with its own culture and way of life, which draws in millions of people every year.
+
+This guide includes everything you need to know to plan your trip, including the best time to visit, the top Scandinavian destinations, where to stay, what to eat, and money-saving tips in this often-pricy part of the world.
+
+## Planning Your Trip
+
+**Best Time to Visit:** Because of the Nordic countries' locations, they have relatively long daylight hours in the summer and very short ones in the winter. Northern Norway and Finland experience almost no darkness during June and July. The summer season brings more stability in the weather, making it the perfect time to schedule outdoor adventures. The winter months are ideal for a quieter vacation and give the best opportunity to spot the Northern Lights because of the lack of light pollution.
+
+**Languages**: Danish, Swedish, Norwegian, Icelandic, and Faroese.
+
+**Currency**: Each country has its own unique currency. Denmark and Greenland both use the Danish krone. Finland uses the traditional European Euro. Norway uses the Norwegian krone, Sweden uses the Swedish krona, and Iceland uses the Icelandic krona.  
+
+**Getting Around**: It is relatively easy to make your way around Scandinavia. The region is driveable, so long as you have a valid license, passport, the car's registration and insurance, and are over the age of 18. The road rules are also similar to that of the U.S., making driving more straightforward than in other countries. However, train travel is just as popular in this area and can be cheaper. There are various rail passes you can get to explore the region, or you can take private train rides, such as the famous Flam rails.
+
+**Travel Tips**: Make sure you pack a variety of clothing, as the weather in Scandinavia can vary between each country. Plan ahead for a trip to Scandanavia, as there are many cities to visit and even more to see and experience.  
+
+## Places to Visit
+
+### Copenhagen, Denmark
+
+Copenhagen offers unique museums that explore its Viking heritage, guided tours to help immerse travelers in its everyday life, and historical sites, such as Amalienborg Castle, where the royal family takes their winter holiday. Travelers can see the changing of the guard daily. Copenhagen is one of Scandinavia's most popular tourist destinations, and there is so much to do that no two days could be the same.  
+
+### Bergen, Norway
+
+Norway offers stunning cities where the scenery might take your breath away. The city of Bergen is one of Norway's most popular and scenic destinations, where you can peruse an old-timey fish market or enjoy buildings that date back to the 14th century. Don't forget to spend some time in the natural beauty of the mountains and fjords surrounding the city.
+
+### Stockholm, Sweden
+
+Stockholm is a busy tourist attraction all on its own. The city is full of gorgeous sights and experiences, including two free beaches, several impressive churches, and Djurgården, a nature park on an island right in the middle of Stockholm.
+
+### Reykjavik, Iceland
+
+Iceland's picturesque terrain is perfect for anyone who wants to earn some stunning photos. Travelers can visit the Blue Lagoon, a series of naturally-heated thermal pools near Iceland's capital Reykjavik. Some people say that bathing in the lagoon can help treat certain skin conditions - it's like visiting a spa minus the insane prices. Travelers can also enjoy whale watching on a whale safari, and depending on where you go and who you booked with, you might even have the opportunity to swim with the giant sea mammals.
+
+### Helsinki, Finland
+
+While less of a tourist attraction than some of the other Scandinavian capital cities, the capital city of Finland, Helsinki, offers some of its own top-notch attractions. Its most popular tourist attraction is the Suomenlinna Fortress, a UNESCO-designated historic site. It holds several shops, restaurants, and museums inside, including one housed in an old submarine. Close to the capital are more than 300 islands that bring in thousands of visitors for recreation and other entertainment throughout the year.  
+
+## What to Eat and Drink
+
+The Scandinavian and Nordic countries are well known for their delicious foods, and each country has its own special something to offer up.
+
+It's hard to think about Sweden's cuisine without thinking of the famous Swedish meatballs, whether it's because it's the national dish or because of the success of Swedish furniture titan IKEA, but that isn't the only dish the nation has to offer. Cinnamon rolls originated from the country in the 1920s, and they are celebrated in Sweden every year on Oct. 4, on Kanelbullar Day. A popular food that isn't entirely as well known outside of the country is smörgåstårta, also known as sandwich cake. Most commonly served at parties and other large gatherings, smörgåstårta is fresh-baked bread filled with meats, fish, and vegetables, often topped with sour cream and cream cheese "icing."
+
+Finnish foods are more fresh and straightforward, but that doesn't mean they aren't delicious. Lohikeitto, for example, is a soup made with salmon, potatoes, and leeks, primarily popular in the winter. Reindeer meat is also a country staple and can be found in most restaurants.
+
+Norway's national dish, Fårikål, is exactly as the name depicts in English—mutton and cabbage. It's simple but delicious and often eaten in the colder months in the country. If you're interested in going out and having a drink, you might see Aquavit on the menu, one of the more well-known alcoholic beverages in Norway made from potatoes and grain.
+
+Denmark's food is much more than the stereotype of meat and potatoes. They have a lot of delicious sweets to offer their visitors. A famous bakery treat found all around the country is flodebolle, a wafer cookie with marshmallow cream and covered in chocolate. The pastry named the Danish, well known in other parts of the world, also comes from its namesake but is often only eaten in Denmark on special occasions or weekends.
+
+Iceland, of course, is well known for its seafood. Travelers can experience seafood that they might not be able to try in their own countries, such as puffin, whale, and fermented shark.  
+
+## Where to Stay
+
+If you're looking to pack your itinerary with multiple activities every day and enjoy finer restaurants and hotels, the capital cities of any of these five countries will be where you want to stay. Copenhagen, Helsinki, Reykjavik, Oslo, and Stockholm are the hub of their respective country's culture and arts, and you'll find plenty to do and explore. It is easy to take day trips to some of the smaller, surrounding towns from these larger cities.
+
+Where you stay should also depend on what kind of things you're looking to experience on your trip. If you're interested in seeing the Northern Lights, for example, you'll want to leave the hustle and bustle of a capital city and go somewhere much more secluded, such as a smaller and less populated area in Sweden.
+
+Camping can also be a fun and different kind of stay; just make sure you know all the rules and regulations before setting up camp.
+
+## Getting There
+
+There are several options when it comes to reaching the many Scandinavian countries. The best airport to fly into in Finland is the Helsinki Vantaan Airport, right in the nation's capital. It's the largest airport in Finland and the easiest for international travel, as it serves over 100 destinations, including the other Scandinavian countries.
+
+Copenhagen International Airport is the closest to Denmark's capital if you're interested in flying there. The Helsinki Vantaan Airport flies to over 100 destinations, although flying into Copenhagen might be a bit cheaper.
+
+Sweden's Stockholm Arlanda Airport is one of the biggest airports in Scandinavia, serving more than 27 million passengers annually. It has many connections to some of the more remote Scandinavian airports.
+
+The Oslo Gardermoen Airport in Norway is closest to Norway's capital and has several means of public transportation within.
+
+Keflavik International Airport is Iceland's largest airport and will only get more prominent in the coming years. The flights here are arguably the cheapest, but with the capital city of Reykjavik still being 45 minutes away, it's not the most convenient of the airports.  
+
+## Money Saving Tips
+
+- Enjoy all of the free things that Scandanavia offers, including its three most extraordinary natural phenomena, the Northern Lights (Aurora Borealis), the Midnight Sun, and the Polar Nights.
+- Scandanavia's casual cafes and bars usually offer very filling meals for a relatively low cost. Integrate them into your eating itinerary instead of sticking to restaurants only.
+- If you're interested in touring museums and other local attractions in Sweden or Norway, look into getting a city card, which can offer discounts and sometimes free admission to some of the most popular tourist sites. They can be purchased online for a day or more.
+- Instead of using ATMs to access the many different kinds of currency in the region, travel with your debit and credit cards instead. It will save you money on potentially high ATM fees.
+EOL
+
+# Şimdi CLI ile indeksliyoruz:
+mkdir -p test_data
+python cli.py index ./test_data/scandinavia.txt
+```

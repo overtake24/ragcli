@@ -24,4 +24,4 @@ COLLECTION_NAME = "document_chunks"
 
 # Model ayarları
 EMBEDDING_MODEL = "all-MiniLM-L6-v2"
-LLM_MODEL = "gemma3:12b"
+LLM_MODEL = "granite3.1-dense:8b"

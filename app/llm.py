@@ -104,13 +104,14 @@ def create_rag_chain(template_name="default"):
             | StrOutputParser()
     )
 
+# app/llm.py - Update this function
 
-def query(question, template_name="default", model_name="DocumentResponse"):
+def query(question, template_name="default", model_name="DocumentResponse", embedding_model="all-MiniLM-L6-v2"):
     """
     Sorgu yap ve yanıtı döndür.
     """
     # Bileşenleri hazırla
-    db = get_vectorstore(get_embeddings())
+    db = get_vectorstore(get_embeddings(embedding_model))
     llm = get_llm()
     retriever = db.as_retriever(search_kwargs={"k": 3})
 
