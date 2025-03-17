@@ -1,0 +1,3 @@
+# LLM Modelleri Hakkında
+
+LLM modelleri, büyük dil modelleri olarak da bilinen yapay zeka sistemleridir. Doğal dil işleme ve üretme yetenekleri sunarlar.

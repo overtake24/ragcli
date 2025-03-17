@@ -1,0 +1,21 @@
+# RAG Sistemleri Nedir?
+
+# RAG Sistemleri Nedir?
+
+RAG (Retrieval-Augmented Generation) sistemleri, büyük dil modellerini (LLM) harici veritabanlarıyla entegre eden modern yapay zeka sistemleridir. Bu yaklaşım, dil modellerinin kendi eğitim verilerinin ötesinde bilgiye erişmesini ve daha doğru, güncel yanıtlar üretmesini sağlar.
+
+## RAG'in Çalışma Prensibi
+
+RAG sistemleri temel olarak şu adımları izler:
+
+1. **Belge İndeksleme**: Metinler vektör veritabanına aktarılır
+2. **Sorgu İşleme**: Kullanıcı sorusu vektöre dönüştürülür
+3. **Benzerlik Araması**: En alakalı belgeler bulunur
+4. **Cevap Üretimi**: LLM, bulunan belgeleri kullanarak yanıt üretir
+
+## RAG Sistemlerinin Avantajları
+
+- Daha doğru ve güncel bilgiler
+- Hallüsinasyon sorunlarının azaltılması
+- Özel bilgi kaynaklarıyla entegrasyon
+- Şeffaf kaynak gösterimi

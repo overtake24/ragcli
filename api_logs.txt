@@ -1,0 +1,75 @@
+API servisi başlatılıyor: http://localhost:8000
+INFO:     Started server process [246161]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+INFO:     Uvicorn running on http://0.0.0.0:8000 (Press CTRL+C to quit)
+INFO:     127.0.0.1:59192 - "GET /docs HTTP/1.1" 200 OK
+/home/overtake/Belgeler/Projelerim/ragcli/app/embedding.py:34: LangChainDeprecationWarning: The class `HuggingFaceEmbeddings` was deprecated in LangChain 0.2.2 and will be removed in 1.0. An updated version of the class exists in the :class:`~langchain-huggingface package and should be used instead. To use it run `pip install -U :class:`~langchain-huggingface` and import as `from :class:`~langchain_huggingface import HuggingFaceEmbeddings``.
+  return SentenceTransformerEmbeddings(model_name=EMBEDDING_MODEL)
+/home/overtake/anaconda3/envs/ragcli_env/lib/python3.11/site-packages/langchain_community/vectorstores/pgvector.py:488: LangChainPendingDeprecationWarning: Please use JSONB instead of JSON for metadata. This change will allow for more efficient querying that involves filtering based on metadata. Please note that filtering operators have been changed when using JSONB metadata to be prefixed with a $ sign to avoid name collisions with columns. If you're using an existing database, you will need to create a db migration for your metadata column to be JSONB and update your queries to use the new operators. 
+  store = cls(
+1 belge parçası oluşturuldu
+INFO:     127.0.0.1:59200 - "POST /index_text HTTP/1.1" 200 OK
+2 belge parçası oluşturuldu
+INFO:     127.0.0.1:49214 - "POST /index_text HTTP/1.1" 200 OK
+/home/overtake/Belgeler/Projelerim/ragcli/app/db.py:43: LangChainPendingDeprecationWarning: This class is pending deprecation and may be removed in a future version. You can swap to using the `PGVector` implementation in `langchain_postgres`. Please read the guidelines in the doc-string of this class to follow prior to migrating as there are some differences between the implementations. See <https://github.com/langchain-ai/langchain-postgres> for details about the new implementation.
+  return PGVector(
+/home/overtake/Belgeler/Projelerim/ragcli/app/db.py:43: LangChainPendingDeprecationWarning: Please use JSONB instead of JSON for metadata. This change will allow for more efficient querying that involves filtering based on metadata. Please note that filtering operators have been changed when using JSONB metadata to be prefixed with a $ sign to avoid name collisions with columns. If you're using an existing database, you will need to create a db migration for your metadata column to be JSONB and update your queries to use the new operators. 
+  return PGVector(
+/home/overtake/Belgeler/Projelerim/ragcli/app/llm.py:23: LangChainDeprecationWarning: The class `Ollama` was deprecated in LangChain 0.3.1 and will be removed in 1.0.0. An updated version of the class exists in the :class:`~langchain-ollama package and should be used instead. To use it run `pip install -U :class:`~langchain-ollama` and import as `from :class:`~langchain_ollama import OllamaLLM``.
+  return Ollama(model=LLM_MODEL)
+Not: Yapılandırılmış yanıt analizi başarısız, ham yanıt döndürülüyor. (Invalid json output: RAG (Retrieval-Augmented Generation) sistemleri, büyük dil modellerini (LLM) harici veritabanlarıyla entegre eden modern yapay zeka sistemleridir. Bu sayede dil modelleri, kendi eğitim verilerinin ötesindeki bilgilere erişebilir ve daha doğru, güncel yanıtlar üretebilir.
+
+RAG sistemlerinin çalışma prensibi şu adımları içerir:
+
+1.  **Belge İndeksleme**: Metinler vektör veritabanına aktarılır.
+2.  **Sorgu İşleme**: Kullanıcı sorusu vektöre dönüştürülür.
+3.  **Benzerlik Araması**: En alakalı belgeler bulunur.
+4.  **Cevap Üretimi**: LLM, bulunan belgeleri kullanarak yanıt üretir.
+
+RAG sistemlerinin avantajları arasında daha doğru ve güncel bilgiler sunma, halüsinasyon sorunlarını azaltma, özel bilgi kaynaklarıyla entegrasyon ve şeffaf kaynak gösterme yer alır.
+For troubleshooting, visit: https://python.langchain.com/docs/troubleshooting/errors/OUTPUT_PARSING_FAILURE )
+INFO:     127.0.0.1:49218 - "POST /query HTTP/1.1" 200 OK
+/home/overtake/Belgeler/Projelerim/ragcli/app/db.py:43: LangChainPendingDeprecationWarning: Please use JSONB instead of JSON for metadata. This change will allow for more efficient querying that involves filtering based on metadata. Please note that filtering operators have been changed when using JSONB metadata to be prefixed with a $ sign to avoid name collisions with columns. If you're using an existing database, you will need to create a db migration for your metadata column to be JSONB and update your queries to use the new operators. 
+  return PGVector(
+Not: Yapılandırılmış yanıt analizi başarısız, ham yanıt döndürülüyor. (Invalid json output: Vektör veritabanları, özellikle Retrieval-Augmented Generation (RAG) sistemleri bağlamında, büyük dil modellerinin (LLM'ler) bilgi erişimini ve yanıt üretimini iyileştirmek için kritik bir rol oynamaktadır. Bu veritabanları, yüksek boyutlu vektörleri verimli bir şekilde depolamak ve benzerlik aramaları gerçekleştirmek üzere tasarlanmıştır [blog_2.txt].
+
+**Vektör Veritabanlarının İşlevi ve RAG Sistemleriyle İlişkisi:**
+
+1.  **Belge İndekslemesi:** RAG sistemlerinde, metin verileri (örneğin, belgeler, web sayfaları) vektörlere dönüştürülür ve bu vektörler bir vektör veritabanında saklanır [blog_2.txt]. Bu işlem, metinlerin semantik anlamlarını sayısal temsillerine dönüştürerek benzer anlamlara sahip metinlerin vektör uzayında birbirine yakın konumlanmasını sağlar.
+2.  **Benzerlik Araması:** Kullanıcı sorgusu da benzer şekilde bir vektöre dönüştürülür ve vektör veritabanında bu sorgu vektörüne en yakın olan vektörleri (yani, en alakalı belgeleri) bulmak için bir benzerlik araması gerçekleştirilir [blog_2.txt].
+3.  **Yanıt Üretimi:** Bulunan ilgili belgeler, LLM'ye girdi olarak verilir ve LLM bu belgelerdeki bilgileri kullanarak kullanıcı sorgusuna yanıt üretir [blog_2.txt].
+
+**Vektör Veritabanlarının Avantajları:**
+
+*   **Doğruluk ve Güncellik:** LLM'lerin kendi eğitim verilerinin ötesindeki güncel ve özel bilgi kaynaklarına erişmesini sağlayarak daha doğru yanıtlar üretilmesine yardımcı olur [blog_2.txt].
+*   **Hallüsasyon Azaltma:** LLM'lerin yanlış veya uydurma bilgiler üretme (hallüsine) olasılığını azaltır [blog_2.txt].
+*   **Özel Bilgi Kaynakları ile Entegrasyon:** Kuruluşların kendi özel bilgi kaynaklarını LLM'lere entegre etmelerini sağlar [blog_2.txt].
+*   **Şeffaflık:** Yanıtların hangi kaynaklardan elde edildiğini göstererek şeffaflığı artırır [blog_2.txt].
+
+**Popüler Vektör Veritabanları:**
+
+Piyasada çeşitli vektör veritabanı çözümleri bulunmaktadır. Bunlardan bazıları şunlardır:
+
+*   **pgvector:** PostgreSQL veritabanı için bir uzantıdır [blog_2.txt].
+*   **Pinecone:** Bulut tabanlı bir vektör veritabanıdır [blog_2.txt].
+*   **Milvus:** Açık kaynaklı bir vektör veritabanıdır [blog_2.txt].
+*   **Qdrant:** Yüksek performanslı bir vektör veritabanıdır [blog_2.txt].
+
+**Referanslar:**
+
+*   [blog\_1.txt](https://example.com/blog_1.txt)
+*   [blog\_2.txt](https://example.com/blog_2.txt)
+*   [daha\_fazla\_bilgi.txt](https://example.com/daha_fazla_bilgi.txt)
+
+*Not: Sağlanan bağlamdaki dosya yolları örnek olup, gerçek dosya konumlarını temsil etmeyebilir.*
+For troubleshooting, visit: https://python.langchain.com/docs/troubleshooting/errors/OUTPUT_PARSING_FAILURE )
+INFO:     127.0.0.1:52854 - "POST /query HTTP/1.1" 200 OK
+/home/overtake/anaconda3/envs/ragcli_env/lib/python3.11/site-packages/langchain_community/vectorstores/pgvector.py:488: LangChainPendingDeprecationWarning: Please use JSONB instead of JSON for metadata. This change will allow for more efficient querying that involves filtering based on metadata. Please note that filtering operators have been changed when using JSONB metadata to be prefixed with a $ sign to avoid name collisions with columns. If you're using an existing database, you will need to create a db migration for your metadata column to be JSONB and update your queries to use the new operators. 
+  store = cls(
+1 belge parçası oluşturuldu
+INFO:     127.0.0.1:52846 - "POST /index_text HTTP/1.1" 200 OK
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+INFO:     Application shutdown complete.
+INFO:     Finished server process [246161]

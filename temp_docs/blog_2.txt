@@ -1,0 +1,28 @@
+# Vektör Veritabanları ve Kullanımları
+
+# Vektör Veritabanları ve Kullanımları
+
+Vektör veritabanları, yüksek boyutlu vektörleri verimli şekilde depolayan ve benzerlik sorguları gerçekleştiren özel veritabanı sistemleridir. Günümüzde semantik arama, öneri sistemleri ve RAG (Retrieval-Augmented Generation) gibi birçok yapay zeka uygulamasında kullanılmaktadırlar.
+
+## Popüler Vektör Veritabanları
+
+- **pgvector**: PostgreSQL uzantısı
+- **Pinecone**: Bulut tabanlı vektör veritabanı
+- **Milvus**: Açık kaynaklı vektör veritabanı
+- **Qdrant**: Yüksek performanslı vektör veritabanı
+
+## pgvector Kullanım Örnekleri
+
+PostgreSQL'in pgvector uzantısı, vektör işlemlerini standart SQL sorguları ile gerçekleştirmenize olanak tanır:
+
+```sql
+-- Vektör sütunu oluşturma
+ALTER TABLE items ADD COLUMN embedding vector(384);
+
+-- Benzerlik araması
+SELECT * FROM items
+ORDER BY embedding <-> '[0.1, 0.2, ...]'
+LIMIT 5;
+```
+
+Bu veritabanları, vektörel veri yapılarını kullanarak semantik arama ve benzer öğe bulma görevlerini hızlı ve verimli şekilde gerçekleştirir.
