@@ -10,10 +10,13 @@ from typing import List, Dict, Any, Optional
 
 from app.db import get_db_connection
 from sentence_transformers import SentenceTransformer
-from langchain.text_splitter import RecursiveCharacterTextSplitter
+from langchain_text_splitters import RecursiveCharacterTextSplitter
+from langchain_community.embeddings import SentenceTransformerEmbeddings
+
+from app.config import EMBEDDING_MODEL
 
 # Default embedding model
-DEFAULT_EMBEDDING_MODEL = "all-MiniLM-L6-v2"
+DEFAULT_EMBEDDING_MODEL = EMBEDDING_MODEL
 _embedding_model = None
 
 
@@ -37,6 +40,13 @@ def get_embedding_model(model_name: str = DEFAULT_EMBEDDING_MODEL) -> SentenceTr
         print(f"Embedding modeli yüklenirken hata: {e}")
         print(f"Model: {model_name}")
         raise
+
+
+def get_embeddings(model_name: str = DEFAULT_EMBEDDING_MODEL):
+    """
+    Langchain uyumlu embedding nesnesini döndür
+    """
+    return SentenceTransformerEmbeddings(model_name=model_name)
 
 
 def generate_embeddings(texts: List[str], model_name: str = DEFAULT_EMBEDDING_MODEL) -> List[List[float]]:
