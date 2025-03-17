@@ -38,13 +38,19 @@ def index(path):
 
 
 @cli.command()
-@click.argument('question')
-@click.option('--template', '-t', default="default", help="Kullanılacak şablon adı")
-@click.option('--model', '-m', default="DocumentResponse", help="Kullanılacak model adı")
-@click.option('--embedding', '-e', default="all-MiniLM-L6-v2", help="Kullanılacak embedding modeli")
+@click.argument("question", type=str)
+@click.option("--template", "-t", default="default", help="Kullanılacak prompt şablonu")
+@click.option("--model", "-m", default="DocumentResponse", help="Kullanılacak yanıt modeli")
+@click.option("--embedding", "-e", default=None, help="Kullanılacak embedding modeli")
 def ask(question, template, model, embedding):
     """Sorgu yap ve cevap al"""
-    click.echo(f"🔍 Sorgulanıyor: '{question}' (şablon: {template}, model: {model})")
+    print(f"🔍 Sorgulanıyor: '{question}' (şablon: {template}, model: {model})")
+
+    # Default embedding değerini config'den al
+    if embedding is None:
+        from app.config import EMBEDDING_MODEL
+        embedding = EMBEDDING_MODEL
+
     answer, sources = query(question, template, model, embedding)
 
     click.echo("\n📝 CEVAP:")

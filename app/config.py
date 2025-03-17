@@ -23,5 +23,8 @@ DB_CONNECTION = f"postgresql://{DB_USER}:{DB_PASS}@{DB_HOST}:{DB_PORT}/{DB_NAME}
 COLLECTION_NAME = "document_chunks"
 
 # Model ayarları
-EMBEDDING_MODEL = "all-MiniLM-L6-v2"
-LLM_MODEL = "granite3.1-dense:8b"
+# Çok dilli modeli ayarla
+EMBEDDING_MODEL = "paraphrase-multilingual-MiniLM-L12-v2"
+# veya
+# EMBEDDING_MODEL = "sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2"
+LLM_MODEL = "gemma3:12b"

@@ -43,11 +43,12 @@ def get_embedding_model(model_name: str = DEFAULT_EMBEDDING_MODEL) -> SentenceTr
         raise
 
 
-def get_embeddings(model_name: str = DEFAULT_EMBEDDING_MODEL):
-    """
-    Langchain uyumlu embedding objesi döndür.
-    """
-    from langchain_community.embeddings import SentenceTransformerEmbeddings
+def get_embeddings(model_name=None):
+    """Embedding modelini döndürür"""
+    from app.config import EMBEDDING_MODEL
+    if model_name is None:
+        model_name = EMBEDDING_MODEL
+    print(f"INFO - Embedding modeli yükleniyor: {model_name}")
     return SentenceTransformerEmbeddings(model_name=model_name)
 
 

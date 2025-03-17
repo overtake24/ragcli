@@ -58,13 +58,17 @@ def setup_db():
     return True
 
 
-def get_vectorstore(embedding_function):
-    """
-    PGVector vektör deposunu döndür.
-    """
+def get_vectorstore(embeddings=None):
+    """Vektör deposunu oluşturur ve döndürür"""
+    from app.config import DB_CONNECTION, COLLECTION_NAME, EMBEDDING_MODEL
+    if embeddings is None:
+        embeddings = get_embeddings(EMBEDDING_MODEL)
+
+    # Config.py'den gelen bağlantı dizesini kullan
+    print(f"DEBUG - Veritabanı bağlantısı: {DB_CONNECTION}")
+
     return PGVector(
-        embedding_function=embedding_function,
-        connection_string=DB_CONNECTION,
-        collection_name=COLLECTION_NAME,
-        distance_strategy="cosine"
+        connection_string=DB_CONNECTION,  # <-- BU SATIR ÇÖZÜM
+        embedding_function=embeddings,
+        collection_name=COLLECTION_NAME
     )
