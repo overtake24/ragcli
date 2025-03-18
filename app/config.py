@@ -24,7 +24,7 @@ COLLECTION_NAME = "document_chunks"
 
 # Model ayarları
 EMBEDDING_MODEL = "all-MiniLM-L6-v2"  # 384 boyutlu vektörler (veritabanıyla uyumlu)
-LLM_MODEL = "llama2"
+LLM_MODEL = "gemma3:12b"
 
 # Belge parçalama ayarları
 DEFAULT_CHUNK_SIZE = 1000  # Varsayılan parça boyutu
