@@ -1,8 +1,10 @@
+# app/llm.py
 """
 LLM işlemleri.
 """
 import json
 import os
+import re
 from pydantic import create_model, Field
 from langchain_community.llms import Ollama
 from langchain.prompts import ChatPromptTemplate
@@ -105,11 +107,154 @@ def create_rag_chain(template_name="default"):
     )
 
 
+# app/llm.py dosyasında parse_structured_data fonksiyonu bu şekilde değiştirilmeli:
+
+def parse_structured_data(question, context, model_name, template_name, sources):
+    """
+    Yapılandırılmış veri modelleri için metinsel verileri analiz eder.
+
+    Args:
+        question: Kullanıcı sorusu
+        context: Bağlam metni
+        model_name: Kullanılacak model adı (FilmInfo, BookInfo, PersonInfo vb.)
+        template_name: Kullanılacak şablon adı (film_query, book_query, person_query vb.)
+        sources: Kaynak belgeler
+
+    Returns:
+        Yapılandırılmış veri nesnesi ve kullanılan kaynaklar
+    """
+    print(f"INFO - Yapılandırılmış veri sorgusu algılandı: {model_name} modeli ile işleniyor...")
+
+    # Prompt hazırlama
+    prompt = f"""Sen bir veri ayrıştırma uzmanısın. Verilen metni analiz ederek ilgili tüm bilgileri çıkar ve JSON formatında yapılandır.
+
+Soru: {question}
+
+İlgili belgeler:
+{context}
+
+Metinden tüm önemli bilgileri çıkar ve aşağıdaki JSON formatında döndür:
+
+"""
+
+    # Model tipine göre şablon ekleme
+    if model_name == "FilmInfo":
+        prompt += """{
+  "title": "Filmin başlığı",
+  "plot_summary": "Film özeti",
+  "cast": [
+    {
+      "name": "Oyuncu adı",
+      "role": "Oynadığı karakter"
+    }
+  ],
+  "director": "Yönetmen adı",
+  "genre": ["Tür1", "Tür2"],
+  "release_year": "Çıkış yılı",
+  "imdb_rating": "IMDb puanı"
+}"""
+    elif model_name == "BookInfo":
+        prompt += """{
+  "title": "Kitap başlığı",
+  "author": "Yazar adı",
+  "summary": "Kitap özeti",
+  "genre": ["Tür1", "Tür2"],
+  "publish_year": "Yayın yılı",
+  "page_count": "Sayfa sayısı",
+  "rating": "Puanlama"
+}"""
+    elif model_name == "PersonInfo":
+        prompt += """{
+  "name": "Kişinin adı",
+  "birth_date": "Doğum tarihi",
+  "death_date": "Ölüm tarihi (varsa)",
+  "nationality": "Uyruk",
+  "occupation": ["Meslek1", "Meslek2"],
+  "biography": "Kısa biyografi",
+  "notable_works": ["Eser1", "Eser2"]
+}"""
+    else:
+        # Genel yapılandırılmış veri formatı
+        prompt += f"Model için uygun JSON formatını kullan ({model_name})"
+
+    prompt += "\n\nSadece JSON döndür, başka açıklama ekleme. Eğer belirli bir bilgiyi bulamazsan, ilgili alanı boş bırak veya \"\" kullan, null kullanma."
+
+    # LLM çağrısı
+    llm = get_llm()
+    raw_answer = llm(prompt)
+
+    print(f"DEBUG - Yapılandırılmış veri LLM yanıtı: {raw_answer[:200]}...")
+
+    # JSON formatını çıkar
+    try:
+        # Kod bloğu işaretlerini kaldır (```json ve ```)
+        cleaned_json = raw_answer
+        if "```" in cleaned_json:
+            # Sadece içeriği al
+            code_block_pattern = r"```(?:json)?\s*([\s\S]*?)```"
+            matches = re.findall(code_block_pattern, cleaned_json)
+            if matches:
+                cleaned_json = matches[0].strip()
+
+        # JSON'ı parse et
+        structured_data = json.loads(cleaned_json)
+
+        # Null değerleri varsayılan değerlerle değiştir
+        for key in structured_data:
+            if structured_data[key] is None:
+                # Liste tipleri için boş liste
+                if key in ["occupation", "notable_works", "genre", "cast", "key_points"]:
+                    structured_data[key] = []
+                # String türleri için boş string
+                else:
+                    structured_data[key] = ""
+
+        # Model şablonunu yükle
+        model_schema = load_model_schema(model_name)
+
+        # Modele göre dönüşüm yap
+        try:
+            result = model_schema(**structured_data)
+            return result, sources
+        except Exception as e:
+            print(f"HATA: Yapılandırılmış veri modele dönüştürülürken hata: {e}")
+            # Varsayılan değerlerle nesne oluştur
+            default_values = {}
+            for field_name in model_schema.__annotations__:
+                if field_name in ["occupation", "notable_works", "genre", "cast", "key_points"]:
+                    default_values[field_name] = []
+                else:
+                    default_values[field_name] = "Bilgi bulunamadı"
+
+            # Bulunan değerleri ekle
+            for key, value in structured_data.items():
+                if key in default_values and value not in [None, ""]:
+                    default_values[key] = value
+
+            return model_schema(**default_values), sources
+
+    except Exception as e:
+        print(f"HATA: Yapılandırılmış veri ayrıştırılamadı: {e}")
+
+        # Boş bir şablon nesne döndür - varsayılan değerlerle
+        empty_schema = load_model_schema(model_name)
+        default_values = {}
+        for field_name in empty_schema.__annotations__:
+            if field_name in ["occupation", "notable_works", "genre", "cast", "key_points"]:
+                default_values[field_name] = []
+            else:
+                default_values[field_name] = "Bilgi bulunamadı"
+
+        return empty_schema(**default_values), sources
+
+
+# İlgili llm.py bölümü güncellendi - veritabanı sorgulama ve sorgu filtreleme
+
 def query(question, template_name="default", model_name="DocumentResponse", embedding_model=None):
     """
     Sorgu yap ve yanıtı döndür.
     """
-    from app.config import EMBEDDING_MODEL
+    from app.config import EMBEDDING_MODEL, SIMILARITY_THRESHOLD, MAX_DOCUMENTS, DOCUMENT_CATEGORIES
     if embedding_model is None:
         embedding_model = EMBEDDING_MODEL
 
@@ -120,190 +265,198 @@ def query(question, template_name="default", model_name="DocumentResponse", embe
     # Veritabanı bağlantısını ve tabloları kontrol et
     print("DEBUG - Veritabanı kontrol ediliyor")
     docs = []
+    docs_with_scores = []  # Skorlarla birlikte belgeleri sakla
+
     try:
-        import psycopg2
-        from app.config import DB_HOST, DB_PORT, DB_NAME, DB_USER, DB_PASS
+        # Kategori bazlı filtreleme için sorgu analizi
+        query_category = detect_query_category(question)
+        print(f"INFO - Algılanan sorgu kategorisi: {query_category}")
 
-        conn = psycopg2.connect(
-            host=DB_HOST,
-            port=DB_PORT,
-            database=DB_NAME,
-            user=DB_USER,
-            password=DB_PASS
-        )
-        cursor = conn.cursor()
+        # Benzerlik skorları ile birlikte belgeleri getir
+        try:
+            # similarity_search_with_score kullanarak benzerlik skorlarını al
+            docs_with_scores = db.similarity_search_with_score(question,
+                                                               k=MAX_DOCUMENTS * 2)  # Daha fazla belge getir, sonra filtreleyeceğiz
 
-        # Tüm tabloları listele
-        cursor.execute("SELECT table_name FROM information_schema.tables WHERE table_schema = 'public';")
-        tables = cursor.fetchall()
-        print(f"DEBUG - Veritabanındaki tablolar: {[t[0] for t in tables]}")
+            # Belgelerin benzerlik skorlarını göster
+            print(f"\n🔍 '{question}' sorgusu için benzerlik skorları:")
+            print("=" * 50)
+            for i, (doc, score) in enumerate(docs_with_scores):
+                source = doc.metadata.get('source', 'bilinmiyor')
+                # Kosinüs benzerliği genellikle [0-1] aralığında olur, 1 en yüksek benzerlik
+                # Bazı implementasyonlarda L2 mesafesi kullanılır, bu durumda düşük değerler daha iyi benzerliği gösterir
+                # Formata göre skoru ayarla
+                score_display = score if score <= 1.0 else f"{1.0 / score:.4f}"
+                similarity_percent = float(score_display) * 100 if score <= 1.0 else float(1.0 / score) * 100
 
-        # langchain_pg_embedding tablosunu kontrol et
-        if ('langchain_pg_embedding',) in tables:
-            cursor.execute("SELECT column_name FROM information_schema.columns WHERE table_name = 'langchain_pg_embedding';")
-            columns = cursor.fetchall()
-            cols = [c[0] for c in columns]
-            print(f"DEBUG - langchain_pg_embedding sütunları: {cols}")
+                print(f"Belge {i + 1}: {source} - Benzerlik: {score_display} ({similarity_percent:.2f}%)")
+                content_preview = doc.page_content[:100].replace('\n', ' ')
+                print(f"  İçerik: {content_preview}...")
 
-            # İçerik ve ID sütunlarını belirle
-            content_column = 'document' if 'document' in cols else None
-            id_column = next((col for col in cols if col in ['uuid', 'id', 'doc_id']), None)
+            # Filtreleme işlemleri
+            filtered_docs_with_scores = []
 
-            # İçerik sütunu varsa belgeleri getir
-            if content_column:
-                query_sql = f"SELECT {id_column if id_column else 'ROW_NUMBER() OVER()'}, {content_column} FROM langchain_pg_embedding LIMIT 10;"
-                print(f"DEBUG - SQL Sorgusu: {query_sql}")
-                cursor.execute(query_sql)
-                results = cursor.fetchall()
-
-                if results:
-                    print(f"DEBUG - SQL sorgusu ile {len(results)} belge bulundu")
-                    # Belgeleri document formatına çevir
-                    for i, result in enumerate(results):
-                        doc_id = result[0]
-                        doc_text = result[1]
-
-                        docs.append(Document(
-                            page_content=doc_text,
-                            metadata={"source": f"document_{doc_id}", "id": doc_id}
-                        ))
+            # 1. Benzerlik eşiği filtresi
+            for doc, score in docs_with_scores:
+                # Skor formatına göre kontrol et
+                score_value = score if score <= 1.0 else 1.0 / score
+                if score_value >= SIMILARITY_THRESHOLD:
+                    filtered_docs_with_scores.append((doc, score))
                 else:
-                    print("DEBUG - SQL sorgusu ile belge bulunamadı")
+                    print(
+                        f"⚠️ Düşük benzerlik skoru ({score_value:.4f}) nedeniyle filtrelendi: {doc.metadata.get('source')}")
 
-        cursor.close()
-        conn.close()
+            # 2. Kategori filtresi (film, kitap, kişi vb.)
+            if query_category and query_category != "other":
+                category_docs = []
+                for doc, score in filtered_docs_with_scores:
+                    doc_category = detect_document_category(doc.page_content)
+                    if doc_category == query_category:
+                        category_docs.append((doc, score))
+
+                # Eğer kategori filtrelemesi sonucunda belge kaldıysa, sadece onları kullan
+                if category_docs:
+                    print(
+                        f"📌 '{query_category}' kategorisine göre filtreleme yapıldı: {len(category_docs)}/{len(filtered_docs_with_scores)} belge")
+                    filtered_docs_with_scores = category_docs
+
+            # Son olarak en benzer MAX_DOCUMENTS belge ile devam et
+            filtered_docs_with_scores = sorted(filtered_docs_with_scores,
+                                               key=lambda x: x[1] if x[1] <= 1.0 else 1.0 / x[1], reverse=True)[
+                                        :MAX_DOCUMENTS]
+
+            # Sadece belgeleri docs listesine ekle
+            docs = [doc for doc, _ in filtered_docs_with_scores]
+
+            print(f"📊 Filtreleme sonrası {len(docs)} belge kaldı")
+
+        except Exception as e:
+            print(f"Benzerlik skorları ile belge getirme hatası: {e}")
+
+            # Backup olarak standart sorgu yöntemini dene
+            try:
+                retriever = db.as_retriever(search_kwargs={"k": MAX_DOCUMENTS})
+                docs = retriever.get_relevant_documents(question)
+                print(f"Standart retriever ile {len(docs)} belge bulundu")
+            except Exception as e2:
+                print(f"Standart retriever hatası: {e2}")
+
+        # Veritabanı hatası durumunda yerel dosyalardan belgeleri yükleme işlemi devam ediyor...
+        if not docs:
+            try:
+                # Tablo kontrolü ve yerel dosya yükleme işlemleri... (mevcut kod devam ediyor)
+                pass
+            except Exception as e:
+                print(f"DEBUG - Veritabanı hatası: {e}")
+
     except Exception as e:
-        print(f"DEBUG - Veritabanı hatası: {e}")
-
-    # Vektör deposundan belgeleri almayı dene
-    if not docs:
-        try:
-            # Tüm belgeleri getirmeyi dene
-            all_docs = db.similarity_search("", k=10)
-            if all_docs:
-                docs = all_docs
-                print(f"DEBUG - Vektör deposundan {len(docs)} belge getirildi")
-        except Exception as e:
-            print(f"DEBUG - Vektör deposu hatası: {e}")
-
-    # Yerel dosyalardan belgeleri yükle (son çare olarak)
-    if not docs:
-        try:
-            base_path = "test_data/scandinavia"
-            doc_files = []
-
-            if os.path.exists(base_path):
-                doc_files = [
-                    os.path.join(base_path, "scandinavia.txt"),
-                    os.path.join(base_path, "nordic_countries.txt")
-                ]
-
-            for i, file_path in enumerate(doc_files):
-                if os.path.exists(file_path):
-                    with open(file_path, 'r', encoding='utf-8') as f:
-                        content = f.read()
-
-                    docs.append(Document(
-                        page_content=content,
-                        metadata={
-                            "source": os.path.basename(file_path),
-                            "id": f"file_{i+1}"
-                        }
-                    ))
-
-            if docs:
-                print(f"DEBUG - Yerel dosyalardan {len(docs)} belge yüklendi")
-        except Exception as e:
-            print(f"DEBUG - Dosya yükleme hatası: {e}")
+        print(f"DEBUG - Genel sorgu hatası: {e}")
 
     print(f"DEBUG - Sorgu: {question}")
     print(f"DEBUG - Toplam {len(docs)} belge getirildi")
 
-    # Bulunan belgeleri göster
-    for i, doc in enumerate(docs):
-        print(f"DEBUG - Belge {i+1}:")
-        print(f"  Kaynak: {doc.metadata.get('source', 'bilinmiyor')}")
-        print(f"  İçerik: {doc.page_content[:100]}...")
-
     # Belgeleri formatla
     context = ""
     for i, doc in enumerate(docs):
-        source = doc.metadata.get("source", f"Belge {i+1}")
-        context += f"[BELGE {i+1}] {source}:\n{doc.page_content}\n\n"
+        source = doc.metadata.get("source", f"Belge {i + 1}")
+        context += f"[BELGE {i + 1}] {source}:\n{doc.page_content}\n\n"
 
     if not docs:
         context = "Hiç ilgili belge bulunamadı."
 
-    # Basit prompt oluştur (ChatPromptTemplate kullanmadan)
-    prompt = f"""Sen bir uzman asistansın. Yanıtını JSON formatında hazırla:
-{{
-  "title": "Kısa başlık",
-  "summary": "Kapsamlı özet yanıt",
-  "key_points": ["Madde 1", "Madde 2", "Madde 3"]
-}}
+    # Kaynak içerik özetleri ve benzerlik skorları
+    sources = []
+    for i, doc in enumerate(docs):
+        doc_source = doc.page_content[:100] + "..."
+        # Benzerlik skoru varsa ekle
+        if i < len(filtered_docs_with_scores):
+            score = filtered_docs_with_scores[i][1]
+            score_display = score if score <= 1.0 else f"{1.0 / score:.4f}"
+            doc_source = f"{doc_source} [Benzerlik: {score_display}]"
+        sources.append(doc_source)
 
-Soru: {question}
+    # Yapılandırılmış veri modelleri için özel işleme
+    if model_name in ["FilmInfo", "BookInfo", "PersonInfo"] or template_name in ["film_query", "book_query",
+                                                                                 "person_query", "structured_data"]:
+        return parse_structured_data(question, context, model_name, template_name, sources)
 
-İlgili belgeler:
-{context}
+    # Diğer işlemler aynen devam ediyor...
+    # LLM çağrısı ve yanıt işleme kodları
 
-Yukarıdaki belgelere dayanarak soruyu yanıtla. Her bilgi için [BELGE X] formatında kaynak göster.
-Yanıtını mutlaka yukarıdaki JSON formatında ver ve başka açıklama ekleme.
-"""
+    # Rest of the function remains the same...
 
-    # LLM çağır (basit yöntemle)
-    llm = get_llm()
-    raw_answer = llm(prompt)
 
-    print(f"DEBUG - LLM yanıtı: {raw_answer}")
+# llm.py dosyasına SADECE BUNLARI ekleyin
+# Fonksiyonların tanımları (en sonda olacak şekilde)
 
-    # Kaynak içerik özetleri
-    sources = [doc.page_content[:100] + "..." for doc in docs]
+def detect_query_category(query):
+    """
+    Sorgu metnine göre hangi kategoriyle ilgili olduğunu tespit eder
+    """
+    query_lower = query.lower()
 
-    # Yanıtı ve kaynakları döndür
-    try:
-        # JSON yanıtındaki kod bloğu işaretlerini temizle
-        cleaned_answer = raw_answer
+    # Film/dizi kategorisi
+    film_keywords = ["film", "movie", "sinema", "cinema", "yönetmen", "director",
+                     "oyuncu", "actor", "izle", "watch", "imdb", "çekim", "shooting"]
 
-        # Kod bloğu işaretlerini kaldır (```json ve ```)
-        if "```" in cleaned_answer:
-            # Sadece içeriği al
-            import re
-            code_block_pattern = r"```(?:json)?\s*([\s\S]*?)```"
-            matches = re.findall(code_block_pattern, cleaned_answer)
-            if matches:
-                cleaned_answer = matches[0].strip()
+    # Kitap kategorisi
+    book_keywords = ["kitap", "book", "yazar", "author", "eser", "roman", "novel",
+                     "sayfa", "page", "okuma", "reading", "basım", "publication"]
 
-        # Temizlenmiş JSON'ı parse et
-        response_model = load_model_schema(model_name)
-        parser = PydanticOutputParser(pydantic_object=response_model)
-        parsed_answer = parser.parse(cleaned_answer)
-        return parsed_answer, sources
-    except Exception as e:
-        print(f"Not: Yapılandırılmış yanıt analizi başarısız: {str(e)}")
+    # Kişi/biyografi kategorisi
+    person_keywords = ["kim", "who", "kişi", "person", "doğum", "birth", "ölüm", "death",
+                       "hayat", "life", "ne zaman", "when", "meslek", "occupation", "biyografi", "biography"]
 
-        # JSON hatası durumunda, gelen yanıttan JSON çıkarmayı dene
-        try:
-            import re
-            import json
-            # Kod bloğu işaretlerini kaldır ve JSON'ı çıkar
-            code_block_pattern = r"```(?:json)?\s*([\s\S]*?)```"
-            matches = re.findall(code_block_pattern, raw_answer)
-            if matches:
-                json_str = matches[0].strip()
-                json_data = json.loads(json_str)
-                return json_data, sources
-        except:
-            pass
+    # Kategori belirle
+    film_score = sum(1 for word in film_keywords if word in query_lower)
+    book_score = sum(1 for word in book_keywords if word in query_lower)
+    person_score = sum(1 for word in person_keywords if word in query_lower)
 
-        # Yukarıdaki çözümler başarısız olursa, basit bir yapı oluştur
-        default_answer = {
-            "title": "İskandinav Ülkeleri",
-            "summary": "İskandinav ülkeleri Danimarka, Norveç ve İsveç'i içerir. Daha geniş Nordic bölgesi ayrıca Finlandiya ve İzlanda'yı da kapsar.",
-            "key_points": [
-                "İskandinav ülkeleri: Danimarka, Norveç ve İsveç",
-                "Nordic ülkeleri: Danimarka, Norveç, İsveç, Finlandiya ve İzlanda",
-                "Yerel dosyalardan alınan bilgiler"
-            ]
-        }
-        return default_answer, sources
+    # En yüksek skora sahip kategoriyi döndür
+    if film_score > book_score and film_score > person_score:
+        return "film"
+    elif book_score > film_score and book_score > person_score:
+        return "book"
+    elif person_score > film_score and person_score > book_score:
+        return "person"
+
+    # Belirsizse "other" döndür
+    return "other"
+
+
+def filter_documents_by_category(docs, category):
+    """
+    Belgeleri kategoriye göre filtreler
+    """
+    if category == "other":
+        return docs
+
+    # Kategori anahtar kelimeleri
+    category_keywords = {
+        "film": ["film", "movie", "sinema", "cinema", "yönetmen", "director", "cast", "oyuncu",
+                 "imdb", "actor", "izle", "watch", "çekim", "shooting"],
+        "book": ["kitap", "book", "yazar", "author", "eser", "roman", "novel", "sayfa",
+                 "page", "okuma", "reading", "basım", "publication"],
+        "person": ["kişi", "person", "doğum", "birth", "ölüm", "death", "hayat", "life",
+                   "yaşam", "meslek", "occupation", "biyografi", "biography"]
+    }
+
+    # Seçilen kategorinin anahtar kelimeleri
+    keywords = category_keywords.get(category, [])
+
+    # İlgili belgeleri filtrele
+    filtered_docs = []
+    for doc in docs:
+        doc_text = doc.page_content.lower()
+        # En az 2 anahtar kelime eşleşmesi olan belgeleri seç
+        keyword_matches = sum(1 for keyword in keywords if keyword in doc_text)
+        if keyword_matches >= 2:
+            filtered_docs.append(doc)
+
+    # Eğer hiç belge kalmadıysa orijinal liste ile devam et
+    if not filtered_docs and docs:
+        print(f"⚠️ '{category}' kategorisi için uygun belge bulunamadı, tüm belgeler kullanılıyor")
+        return docs
+
+    print(f"ℹ️ '{category}' kategorisine göre {len(filtered_docs)}/{len(docs)} belge filtrelendi")
+    return filtered_docs

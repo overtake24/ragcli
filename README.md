@@ -2,6 +2,14 @@
 
 Yerel LLM kullanarak vektör tabanlı bilgi erişimi için komut satırı arayüzü. PostgreSQL, pgvector, Ollama ve LangChain Expression Language (LCEL) kullanarak çevrimdışı çalışan bir RAG (Retrieval-Augmented Generation) sistemi.
 
+## Özellikler
+
+- **Tamamen Yerel**: Ollama üzerinde çalışan LLM sayesinde internet bağlantısı gerektirmez
+- **Kolay Kurulum**: Tek komutla kurulum
+- **Vektör Tabanlı Arama**: Semantik olarak benzer belgeleri bulur
+- **CLI ve API**: Hem komut satırı hem de HTTP API üzerinden erişim
+- **Özelleştirilebilir**: Prompt şablonları ve yanıt modelleri düzenlenebilir
+
 ## Hızlı Başlangıç
 
 ```bash
@@ -9,83 +17,77 @@ Yerel LLM kullanarak vektör tabanlı bilgi erişimi için komut satırı arayü
 git clone <repo-url> ragcli
 cd ragcli
 
-# 2. Kurulum ve ortam hazırlık
-bash scripts/setup_env.sh
+# 2. Kurulumu çalıştır
+bash setup.sh
 
-# 3. Veritabanı kurulumu
-bash scripts/setup_db.sh
+# 3. Belge ekle
+python cli.py index /path/to/documents/
 
-# 4. Temel testleri çalıştır
-bash scripts/run_tests.sh
+# 4. Sorgu yap
+python cli.py ask "Sorgunuz?"
 ```
 
-## Detaylı Kurulum
+## Gereksinimler
 
-### 1. PostgreSQL ve pgvector Kurulumu
+- Python 3.8+
+- PostgreSQL 12+ (pgvector uzantısı ile)
+- Ollama
+
+## Kurulum
+
+### Otomatik Kurulum
+
+En kolay kurulum için `setup.sh` scriptini kullanın:
 
 ```bash
-bash scripts/setup_db.sh
+bash setup.sh
 ```
 
-Manuel kurulum için:
+Bu script:
+- Gerekli Python paketlerini kurar
+- Ollama LLM'i yükler (kurulu değilse)
+- Veritabanını hazırlar
+- Örnek belgeler indeksler
+- Test sorgusu yapar
 
-1. PostgreSQL kurulumu:
-   ```bash
-   sudo apt-get update
-   sudo apt-get install -y postgresql postgresql-contrib
-   ```
+### Manuel Kurulum
 
-2. TCP/IP bağlantılarını etkinleştir:
-   ```bash
-   sudo sed -i "s/#listen_addresses = 'localhost'/listen_addresses = '*'/" /etc/postgresql/*/main/postgresql.conf
-   sudo sed -i "s/host    all             all             127.0.0.1\/32            md5/host    all             all             0.0.0.0\/0               md5/" /etc/postgresql/*/main/pg_hba.conf
-   ```
-
-3. PostgreSQL'i yeniden başlat:
-   ```bash
-   sudo systemctl restart postgresql
-   ```
-
-4. Veritabanı oluşturma:
-   ```bash
-   sudo -u postgres psql -c "CREATE DATABASE ragdb;"
-   sudo -u postgres psql -c "CREATE USER raguser WITH PASSWORD 'ragpassword';"
-   sudo -u postgres psql -c "GRANT ALL PRIVILEGES ON DATABASE ragdb TO raguser;"
-   sudo -u postgres psql -c "ALTER USER raguser WITH SUPERUSER;"  # pgvector için gerekli
-   ```
-
-5. pgvector uzantısını etkinleştirme:
-   ```bash
-   sudo -u postgres psql -d ragdb -c "CREATE EXTENSION IF NOT EXISTS vector;"
-   ```
-
-### 2. Python Ortamı ve Bağımlılıklar
-
+1. Bağımlılıkları yükleyin:
 ```bash
-# Python sanal ortam oluştur
-python -m venv ragcli_env
-source ragcli_env/bin/activate
-
-# Bağımlılıkları yükle
-pip install -r requirements.txt
+pip install langchain langchain-community langchain-text-splitters click psycopg2-binary pgvector sentence-transformers fastapi uvicorn ollama
 ```
 
-### 3. Ollama Kurulumu
+2. Ollama'yı kurun ve başlatın:
+```bash
+# Linux için
+curl -fsSL https://ollama.com/install.sh | sh
+# Windows için https://ollama.ai/download adresinden indirin
 
-1. Ollama'yı yükleyin:
-   ```bash
-   curl -fsSL https://ollama.com/install.sh | sh
-   ```
+# Ollama servisini başlatın
+ollama serve
+```
 
-2. LLaMA 2 veya başka bir model yükleyin:
-   ```bash
-   ollama pull llama2
-   ```
+3. LLM modelini indirin:
+```bash
+ollama pull llama2
+# veya başka bir model
+# ollama pull gemma:2b
+```
 
-3. Ollama servisini başlatın:
-   ```bash
-   ollama serve
-   ```
+4. Veritabanını kurun:
+```bash
+# PostgreSQL ve pgvector kurulumu (örnek)
+sudo apt install postgresql postgresql-contrib
+# pgvector kurulumu için dokümantasyona bakın
+
+# Veritabanını başlatma
+python cli.py init
+```
+
+5. Yapılandırmayı düzenleyin:
+```bash
+# app/config.py dosyasında veritabanı bağlantı bilgilerini ayarlayın
+```
 
 ## Kullanım
 
@@ -98,112 +100,93 @@ python cli.py init
 ### Belgeleri İndeksleme
 
 ```bash
-python cli.py index ./belgeler
+# Tek bir belge eklemek
+python cli.py index /path/to/document.txt
+
+# Bir klasördeki tüm belgeleri eklemek
+python cli.py index /path/to/documents/
 ```
 
 ### Sorgu Yapma
 
 ```bash
-python cli.py ask "Bu belgelerde neler anlatılıyor?"
+# Temel sorgu
+python cli.py ask "Sormak istediğiniz soru?"
+
+# Şablon kullanarak sorgu
+python cli.py ask "Sorgunuz?" --template academic
+
+# Farklı yanıt modeli kullanarak sorgu
+python cli.py ask "Sorgunuz?" --model QuestionAnswer
 ```
 
-### Farklı Şablonlarla Sorgu
+### API Servisi
 
 ```bash
-# Akademik şablon ile sorgu
-python cli.py ask "Veri tabanı nedir?" --template academic
+# API servisini başlatma
+python cli.py serve
 
-# Farklı model kullanarak sorgu
-python cli.py ask "Özetler misin?" --model QuestionAnswer
+# Belirli bir port ile başlatma
+python cli.py serve --port 3000
 ```
 
-### Şablonları Düzenleme
-
-```bash
-# Prompt şablonlarını düzenle
-python cli.py edit-prompt
-
-# Model şablonlarını düzenle
-python cli.py edit-model
-```
-
-### API Servisini Başlatma
-
-```bash
-python cli.py serve --port 8000
-```
-
-## API Kullanımı
-
-### Sorgu Yapma
-
+API başladıktan sonra:
+1. Swagger dokümantasyonu: `http://localhost:8000/docs`
+2. Sorgu yapma: 
 ```bash
 curl -X POST "http://localhost:8000/query" \
   -H "Content-Type: application/json" \
-  -d '{"query": "Bu belgelerde neler anlatılıyor?", "template": "summary"}'
+  -d '{"query": "RAG nedir?"}'
 ```
 
-### Şablonları Listeleme
+### Diğer Komutlar
 
 ```bash
-curl "http://localhost:8000/templates"
-```
+# Şablonları listeleme
+python cli.py templates
 
-### Modelleri Listeleme
+# Modelleri listeleme
+python cli.py models
 
-```bash
-curl "http://localhost:8000/models"
+# Şablon düzenleme
+python cli.py edit-prompt
+
+# Model düzenleme
+python cli.py edit-model
+
+# Sistem durumunu kontrol etme
+python cli.py status
+
+# Yardım görüntüleme
+python cli.py --help
 ```
 
 ## Yapılandırma
 
-Temel yapılandırma ayarları `app/config.py` dosyasında bulunur. Veritabanı bağlantı bilgileri, model adları ve diğer ayarları buradan düzenleyebilirsiniz.
+`app/config.py` dosyası üzerinden yapılandırma yapabilirsiniz:
 
-Alternatif olarak, çevre değişkenleri kullanarak yapılandırma yapabilirsiniz:
+- **DB_CONNECTION**: Veritabanı bağlantı dizesi
+- **EMBEDDING_MODEL**: Kullanılacak embedding modeli (varsayılan: `all-MiniLM-L6-v2`)
+- **LLM_MODEL**: Kullanılacak Ollama modeli (varsayılan: `llama2`)
+
+Çevre değişkenleri ile de yapılandırabilirsiniz:
 
 ```bash
 export RAGCLI_DB_HOST=localhost
-export RAGCLI_DB_PORT=5432
 export RAGCLI_DB_NAME=ragdb
-export RAGCLI_DB_USER=raguser
-export RAGCLI_DB_PASS=ragpassword
+export RAGCLI_LLM_MODEL=gemma:2b
 ```
 
-## Sorun Giderme
+## Mimari
 
-Yaygın sorunlar ve çözümleri için [TROUBLESHOOTING.md](TROUBLESHOOTING.md) dosyasına bakabilirsiniz.
+RAG CLI, aşağıdaki bileşenlerden oluşur:
 
-## Proje Klasör Yapısı
+1. **Vektörleştirme**: SentenceTransformers ve `all-MiniLM-L6-v2` model kullanılarak belgeler vektörleştirilir
+2. **Veritabanı**: pgvector uzantısı ile PostgreSQL veritabanı kullanılır
+3. **LLM**: Ollama ile yerel dil modeli kullanılır
+4. **CLI Arayüzü**: Click kütüphanesi ile komut satırı arayüzü sağlanır
+5. **API**: FastAPI ile HTTP API servisi sağlanır
 
-```
-ragcli/
-  ├── app/
-  │    ├── __init__.py           # Modül bilgileri
-  │    ├── config.py             # Konfigürasyon ayarları
-  │    ├── db.py                 # Veritabanı işlemleri
-  │    ├── embedding.py          # Embedding işlemleri
-  │    ├── llm.py                # LLM işlemleri
-  │    └── utils.py              # Yardımcı fonksiyonlar
-  ├── templates/
-  │    ├── models.json           # Model şablonları
-  │    └── prompts.json          # Prompt şablonları
-  ├── scripts/
-  │    ├── setup_db.sh           # PostgreSQL ve pgvector kurulum scripti
-  │    ├── setup_env.sh          # Geliştirme ortamı kurulum scripti
-  │    └── run_tests.sh          # Test çalıştırma scripti
-  ├── tests/
-  │    ├── __init__.py
-  │    └── test_basic.py         # Temel testler
-  ├── cli.py                     # Ana CLI programı
-  ├── requirements.txt           # Bağımlılıklar
-  └── README.md                  # Dokümantasyon
-```
+## Lisans
 
-## Özellikler
-
-- **LCEL Optimizasyonu**: Modern LCEL pipe operatörleri ile akıcı ve verimli iş akışları
-- **Dinamik Şablonlar**: JSON dosyalarından okunan özelleştirilebilir prompt ve model şablonları
-- **API Desteği**: FastAPI entegrasyonu ile kolay kullanım
-- **Minimal Tasarım**: Az ve öz kod ile maksimum işlevsellik
-- **Offline Kullanım**: Ollama ile tamamen yerel çalışma
-- **all-MiniLM-L6-v2**: Hafif ve hızlı embedding modeli
+MIT

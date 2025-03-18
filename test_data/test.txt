@@ -1,1 +1,0 @@
-RAG sistemleri, LLM'leri harici verilerle zenginleştirir.

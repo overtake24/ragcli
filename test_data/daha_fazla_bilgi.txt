@@ -1,1 +1,0 @@
-RAG sistemleri, özel bilgi kaynaklarını LLM'lere entegre etmenin etkili bir yoludur.
