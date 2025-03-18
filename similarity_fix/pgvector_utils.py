@@ -70,51 +70,6 @@ class PGVectorClient:
             print(f"Tablo kontrolü hatası: {e}")
             return False
 
-    def check_extension_exists(self, extension_name: str = "vector") -> bool:
-        """Belirtilen uzantının yüklü olup olmadığını kontrol eder."""
-        if not self.is_connected and not self.connect():
-            return False
-
-        try:
-            cursor = self.conn.cursor()
-            cursor.execute("""
-            SELECT EXISTS (
-               SELECT FROM pg_extension 
-               WHERE extname = %s
-            );
-            """, (extension_name,))
-            return cursor.fetchone()[0]
-        except Exception as e:
-            print(f"Uzantı kontrolü hatası: {e}")
-            return False
-
-    def get_documents(self, limit: int = 100, offset: int = 0) -> List[Document]:
-        """Belgeleri getirir."""
-        if not self.is_connected and not self.connect():
-            return []
-
-        try:
-            cursor = self.conn.cursor()
-            cursor.execute("""
-            SELECT document_id, title, content, metadata, embedding
-            FROM document_chunks
-            ORDER BY id
-            LIMIT %s OFFSET %s
-            """, (limit, offset))
-            documents = []
-            for doc_id, title, content, metadata, embedding in cursor.fetchall():
-                documents.append(Document(
-                    id=doc_id,
-                    title=title or "Başlıksız",
-                    content=content,
-                    metadata=metadata or {},
-                    embedding=embedding
-                ))
-            return documents
-        except Exception as e:
-            print(f"Belge getirme hatası: {e}")
-            return []
-
     def similarity_search(self, query_vector: List[float],
                           limit: int = 5,
                           metric: str = "l2") -> List[Tuple[Document, float]]:
@@ -169,158 +124,81 @@ class PGVectorClient:
         normalized_results = []
         for doc, score in results:
             if metric == "l2":
+                # L2 uzaklığını benzerlik skoruna çevir (düşük değer->yüksek benzerlik)
                 normalized_score = 1 / (1 + score)
             elif metric == "cosine":
+                # Kosinüs zaten [0,1] aralığında
                 normalized_score = score
             elif metric == "inner":
+                # Sigmoid dönüşümü
                 normalized_score = 1 / (1 + np.exp(-score))
             else:
                 normalized_score = score
             normalized_results.append((doc, normalized_score))
+        # Benzerlik skoruna göre azalan sırada sırala (en benzer en üstte)
         return sorted(normalized_results, key=lambda x: x[1], reverse=True)
 
-    def get_embedding_stats(self) -> Dict[str, Any]:
-        """Embedding vektörlerinin istatistiklerini getirir."""
-        if not self.is_connected and not self.connect():
-            return {}
 
-        try:
-            cursor = self.conn.cursor()
-            cursor.execute("SELECT COUNT(*) FROM document_chunks")
-            total_docs = cursor.fetchone()[0]
-            cursor.execute("SELECT array_length(embedding, 1) FROM document_chunks LIMIT 1")
-            result = cursor.fetchone()
-            vector_dim = result[0] if result else None
-            cursor.execute("SELECT COUNT(*) FROM document_chunks WHERE embedding IS NULL")
-            null_embeddings = cursor.fetchone()[0]
-            cursor.execute("SELECT embedding FROM document_chunks WHERE embedding IS NOT NULL LIMIT 1")
-            sample_embedding = cursor.fetchone()
-            if sample_embedding:
-                sample_embedding = sample_embedding[0]
-                min_val = min(sample_embedding)
-                max_val = max(sample_embedding)
-                avg_val = sum(sample_embedding) / len(sample_embedding)
-                std_val = np.std(sample_embedding)
-            else:
-                min_val = max_val = avg_val = std_val = None
-            return {
-                "total_documents": total_docs,
-                "vector_dimension": vector_dim,
-                "null_embeddings": null_embeddings,
-                "vector_stats": {
-                    "min": min_val,
-                    "max": max_val,
-                    "avg": avg_val,
-                    "std": std_val
-                }
-            }
-        except Exception as e:
-            print(f"Embedding istatistikleri hatası: {e}")
-            return {}
-
-    def get_database_info(self) -> Dict[str, Any]:
-        """Veritabanı hakkında genel bilgi getirir."""
-        if not self.is_connected and not self.connect():
-            return {}
-
-        try:
-            cursor = self.conn.cursor()
-            cursor.execute("SELECT version()")
-            version = cursor.fetchone()[0]
-            cursor.execute("SELECT extversion FROM pg_extension WHERE extname = 'vector'")
-            pgvector_version = cursor.fetchone()
-            if pgvector_version:
-                pgvector_version = pgvector_version[0]
-            cursor.execute("""
-            SELECT tablename FROM pg_tables
-            WHERE schemaname = 'public'
-            """)
-            tables = [row[0] for row in cursor.fetchall()]
-            langchain_tables = [table for table in tables if table.startswith('langchain_')]
-            return {
-                "postgresql_version": version,
-                "pgvector_version": pgvector_version,
-                "tables": tables,
-                "langchain_tables": langchain_tables
-            }
-        except Exception as e:
-            print(f"Veritabanı bilgisi hatası: {e}")
-            return {}
-
-
-def get_client_from_env() -> PGVectorClient:
-    """Çevre değişkenlerinden PGVector istemcisi oluşturur."""
-    try:
-        sys.path.append("../..")
-        from app.config import DB_HOST, DB_PORT, DB_NAME, DB_USER, DB_PASS
-        client = PGVectorClient(
-            host=DB_HOST,
-            port=DB_PORT,
-            dbname=DB_NAME,
-            user=DB_USER,
-            password=DB_PASS
-        )
-    except ImportError:
-        client = PGVectorClient(
-            host=os.getenv("RAGCLI_DB_HOST", "localhost"),
-            port=os.getenv("RAGCLI_DB_PORT", "5432"),
-            dbname=os.getenv("RAGCLI_DB_NAME", "ragdb"),
-            user=os.getenv("RAGCLI_DB_USER", "raguser"),
-            password=os.getenv("RAGCLI_DB_PASS", "ragpassword")
-        )
-    return client
-
-
-def test_connection():
-    """Bağlantıyı test eder."""
-    client = get_client_from_env()
-    if client.connect():
-        print("✅ Veritabanı bağlantısı başarılı!")
-        info = client.get_database_info()
-        print(f"PostgreSQL sürümü: {info.get('postgresql_version', 'Bilinmiyor')}")
-        print(f"pgvector sürümü: {info.get('pgvector_version', 'Bilinmiyor')}")
-        print(f"Tablolar: {info.get('tables', [])}")
-        embedding_stats = client.get_embedding_stats()
-        print(f"Toplam belge sayısı: {embedding_stats.get('total_documents', 0)}")
-        print(f"Vektör boyutu: {embedding_stats.get('vector_dimension', 'Bilinmiyor')}")
-        client.disconnect()
-        return True
-    else:
-        print("❌ Veritabanı bağlantısı başarısız!")
-        return False
-
-
-# >>> EK: Global Fonksiyon - query_similar_documents <<<
+# >>> Global Fonksiyon - query_similar_documents <<<
 def query_similar_documents(query_vector: List[float], top_k: int = 5, metric: str = "l2") -> List[Dict[str, Any]]:
     """
     PGVectorClient kullanarak benzerlik araması yapar.
-    Dönen sonuçlar, adapter ve deney script’lerinin beklediği sözlük formatında (score, distance, category vs.) verilir.
+    Dönen sonuçlar, adapter ve deney script'lerinin beklediği sözlük formatında verilir.
     """
     client = PGVectorClient()
     if not client.connect():
         print("❌ Veritabanı bağlantısı kurulamadı.")
         return []
+
     # Benzerlik araması (raw sonuç: (Document, score))
-    # "metadata" sütunu sorgudan çıkarıldı, eğer tablo içinde mevcut değilse.
     results = client.similarity_search(query_vector, limit=top_k, metric=metric)
     client.disconnect()
+
     converted_results = []
     for doc, score in results:
         result = {
             "id": doc.id,
             "title": doc.title,
             "content": doc.content,
-            "metadata": {},  # metadata sütunu olmadığından boş dict atanıyor
+            "metadata": {},  # metadata sütunu yoksa boş dict atanıyor
             "embedding": doc.embedding,
-            "score": score,          # Raw skor (L2 uzaklığı, düşük ise daha iyi)
-            "distance": score        # L2 metriğinde skor, tersine çevrilmek için kullanılabilir
+            "score": score,  # Raw skor
+            "distance": score,  # L2 metriğinde uzaklık
+            "normalized_score": 1 / (1 + score) if metric == "l2" else score  # Normalize edilmiş benzerlik skoru
         }
-        # Kategori bilgisi yoksa "default" olarak atanıyor
-        result["category"] = doc.metadata.get("category", "default") if doc.metadata else "default"
-        converted_results.append(result)
-    return converted_results
 
+        # Basit kategori tespiti
+        content_lower = doc.content.lower() if doc.content else ""
+        title_lower = doc.title.lower() if doc.title else ""
+
+        person_keywords = ["scientist", "physicist", "chemist", "researcher", "bilim", "fizikçi", "kimyager"]
+        film_keywords = ["film", "movie", "director", "actor", "cinema", "sinema", "yönetmen", "oyuncu"]
+        book_keywords = ["book", "novel", "author", "kitap", "roman", "yazar"]
+
+        if any(keyword in content_lower or keyword in title_lower for keyword in person_keywords):
+            result["category"] = "person"
+        elif any(keyword in content_lower or keyword in title_lower for keyword in film_keywords):
+            result["category"] = "film"
+        elif any(keyword in content_lower or keyword in title_lower for keyword in book_keywords):
+            result["category"] = "book"
+        else:
+            result["category"] = "default"
+
+        converted_results.append(result)
+
+    # Sonuçları L2 metriğinde uzaklığa göre sırala (küçükten büyüğe)
+    if metric == "l2":
+        return sorted(converted_results, key=lambda x: x["score"])
+    # Kosinüs ve iç çarpım metriklerinde benzerlik skoruna göre sırala (büyükten küçüğe)
+    else:
+        return sorted(converted_results, key=lambda x: x["score"], reverse=True)
 
 
 if __name__ == "__main__":
-    test_connection()
+    # Test kodu
+    client = PGVectorClient()
+    if client.connect():
+        print("✅ Veritabanı bağlantısı başarılı!")
+        client.disconnect()
+    else:
+        print("❌ Veritabanı bağlantısı başarısız!")
