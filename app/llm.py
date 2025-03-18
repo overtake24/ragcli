@@ -16,7 +16,7 @@ from langchain_core.documents import Document
 from app.config import LLM_MODEL, MODEL_SCHEMA_FILE, PROMPT_TEMPLATE_FILE
 from app.embedding import get_embeddings
 from app.db import get_vectorstore
-
+from app.categorizer import detect_query_category, detect_document_category, filter_documents_by_category
 
 def get_llm():
     """
@@ -250,11 +250,16 @@ Metinden tüm önemli bilgileri çıkar ve aşağıdaki JSON formatında döndü
 
 # İlgili llm.py bölümü güncellendi - veritabanı sorgulama ve sorgu filtreleme
 
+# Bu kodu app/llm.py dosyasındaki mevcut query fonksiyonuyla değiştirin
+
 def query(question, template_name="default", model_name="DocumentResponse", embedding_model=None):
     """
     Sorgu yap ve yanıtı döndür.
     """
     from app.config import EMBEDDING_MODEL, SIMILARITY_THRESHOLD, MAX_DOCUMENTS, DOCUMENT_CATEGORIES
+    from app.categorizer import detect_query_category, detect_document_category, filter_documents_by_category
+    from app.similarity import correct_similarity_scores, filter_irrelevant_documents, analyze_similarity_results
+
     if embedding_model is None:
         embedding_model = EMBEDDING_MODEL
 
@@ -275,55 +280,35 @@ def query(question, template_name="default", model_name="DocumentResponse", embe
         # Benzerlik skorları ile birlikte belgeleri getir
         try:
             # similarity_search_with_score kullanarak benzerlik skorlarını al
-            docs_with_scores = db.similarity_search_with_score(question,
-                                                               k=MAX_DOCUMENTS * 2)  # Daha fazla belge getir, sonra filtreleyeceğiz
+            original_docs_with_scores = db.similarity_search_with_score(
+                question,
+                k=MAX_DOCUMENTS * 2  # Daha fazla belge getir, sonra filtreleyeceğiz
+            )
 
-            # Belgelerin benzerlik skorlarını göster
             print(f"\n🔍 '{question}' sorgusu için benzerlik skorları:")
             print("=" * 50)
-            for i, (doc, score) in enumerate(docs_with_scores):
+            for i, (doc, score) in enumerate(original_docs_with_scores):
                 source = doc.metadata.get('source', 'bilinmiyor')
-                # Kosinüs benzerliği genellikle [0-1] aralığında olur, 1 en yüksek benzerlik
-                # Bazı implementasyonlarda L2 mesafesi kullanılır, bu durumda düşük değerler daha iyi benzerliği gösterir
-                # Formata göre skoru ayarla
-                score_display = score if score <= 1.0 else f"{1.0 / score:.4f}"
-                similarity_percent = float(score_display) * 100 if score <= 1.0 else float(1.0 / score) * 100
-
-                print(f"Belge {i + 1}: {source} - Benzerlik: {score_display} ({similarity_percent:.2f}%)")
+                print(f"Belge {i + 1}: {source} - Benzerlik: {score} ({score * 100:.2f}%)")
                 content_preview = doc.page_content[:100].replace('\n', ' ')
                 print(f"  İçerik: {content_preview}...")
 
-            # Filtreleme işlemleri
-            filtered_docs_with_scores = []
+            # BENZERLİK SKORU DÜZELTMESİ: L2 uzaklığını doğru benzerlik skorlarına dönüştür
+            # PGVector varsayılan olarak L2 uzaklığını kullanır (düşük = daha benzer)
+            corrected_docs_with_scores = correct_similarity_scores(
+                original_docs_with_scores,
+                score_type="l2"  # PGVector için L2 uzaklığı
+            )
 
-            # 1. Benzerlik eşiği filtresi
-            for doc, score in docs_with_scores:
-                # Skor formatına göre kontrol et
-                score_value = score if score <= 1.0 else 1.0 / score
-                if score_value >= SIMILARITY_THRESHOLD:
-                    filtered_docs_with_scores.append((doc, score))
-                else:
-                    print(
-                        f"⚠️ Düşük benzerlik skoru ({score_value:.4f}) nedeniyle filtrelendi: {doc.metadata.get('source')}")
+            # İlgisiz belgeleri filtrele
+            filtered_docs_with_scores = filter_irrelevant_documents(
+                corrected_docs_with_scores,
+                category=query_category,
+                threshold=SIMILARITY_THRESHOLD
+            )
 
-            # 2. Kategori filtresi (film, kitap, kişi vb.)
-            if query_category and query_category != "other":
-                category_docs = []
-                for doc, score in filtered_docs_with_scores:
-                    doc_category = detect_document_category(doc.page_content)
-                    if doc_category == query_category:
-                        category_docs.append((doc, score))
-
-                # Eğer kategori filtrelemesi sonucunda belge kaldıysa, sadece onları kullan
-                if category_docs:
-                    print(
-                        f"📌 '{query_category}' kategorisine göre filtreleme yapıldı: {len(category_docs)}/{len(filtered_docs_with_scores)} belge")
-                    filtered_docs_with_scores = category_docs
-
-            # Son olarak en benzer MAX_DOCUMENTS belge ile devam et
-            filtered_docs_with_scores = sorted(filtered_docs_with_scores,
-                                               key=lambda x: x[1] if x[1] <= 1.0 else 1.0 / x[1], reverse=True)[
-                                        :MAX_DOCUMENTS]
+            # Geliştirici modunda analiz yap (isteğe bağlı)
+            # analyze_similarity_results(question, filtered_docs_with_scores, original_docs_with_scores)
 
             # Sadece belgeleri docs listesine ekle
             docs = [doc for doc, _ in filtered_docs_with_scores]
@@ -364,15 +349,10 @@ def query(question, template_name="default", model_name="DocumentResponse", embe
     if not docs:
         context = "Hiç ilgili belge bulunamadı."
 
-    # Kaynak içerik özetleri ve benzerlik skorları
+    # Kaynak içerik özetleri
     sources = []
     for i, doc in enumerate(docs):
         doc_source = doc.page_content[:100] + "..."
-        # Benzerlik skoru varsa ekle
-        if i < len(filtered_docs_with_scores):
-            score = filtered_docs_with_scores[i][1]
-            score_display = score if score <= 1.0 else f"{1.0 / score:.4f}"
-            doc_source = f"{doc_source} [Benzerlik: {score_display}]"
         sources.append(doc_source)
 
     # Yapılandırılmış veri modelleri için özel işleme
@@ -380,14 +360,51 @@ def query(question, template_name="default", model_name="DocumentResponse", embe
                                                                                  "person_query", "structured_data"]:
         return parse_structured_data(question, context, model_name, template_name, sources)
 
-    # Diğer işlemler aynen devam ediyor...
-    # LLM çağrısı ve yanıt işleme kodları
+    # LCEL sorgu zincirine yönlendir
+    prompt_template = load_prompt_template(template_name)
 
-    # Rest of the function remains the same...
+    try:
+        # Yanıt modeli şemasını yükle
+        output_schema = load_model_schema(model_name)
+        output_parser = PydanticOutputParser(pydantic_object=output_schema)
 
+        # Cevabı yapılandırılmış veri olarak al
+        chain = prompt_template | get_llm() | output_parser
+        result = chain.invoke({"query": question, "context": context})
 
-# llm.py dosyasına SADECE BUNLARI ekleyin
-# Fonksiyonların tanımları (en sonda olacak şekilde)
+        return result, sources
+    except Exception as e:
+        print(f"Not: Yapılandırılmış yanıt analizi başarısız, ham yanıt döndürülüyor. ({e})")
+
+        # Alternatif olarak ham çıktı
+        chain = prompt_template | get_llm() | StrOutputParser()
+        raw_response = chain.invoke({"query": question, "context": context})
+
+        # Basit ad-değer çifti parser
+        result = {}
+        current_key = None
+        current_value = []
+
+        for line in raw_response.split('\n'):
+            line = line.strip()
+            if not line:
+                continue
+
+            # Yeni bir başlık mı?
+            if line.upper() == line and len(line) > 3:
+                # Önceki değeri kaydet
+                if current_key:
+                    result[current_key] = '\n'.join(current_value)
+                current_key = line.lower()
+                current_value = []
+            elif current_key:
+                current_value.append(line)
+
+        # Son değeri ekle
+        if current_key and current_value:
+            result[current_key] = '\n'.join(current_value)
+
+        return result, sources
 
 def detect_query_category(query):
     """

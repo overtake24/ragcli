@@ -6,7 +6,42 @@ import re
 from typing import List, Dict, Any, Tuple, Optional
 
 
-def detect_document_category(query: str) -> str:
+def detect_document_category(content: str) -> str:
+    """
+    İçerik metnine göre belgenin kategorisini tespit eder
+    """
+    content_lower = content.lower()
+
+    # Film/dizi kategorisi
+    film_keywords = ["film", "movie", "sinema", "cinema", "yönetmen", "director",
+                     "oyuncu", "actor", "imdb", "cast", "inception"]
+
+    # Kitap kategorisi
+    book_keywords = ["kitap", "book", "yazar", "author", "sayfa", "page",
+                     "roman", "novel", "yüzük", "lord of rings", "tolkien"]
+
+    # Kişi/biyografi kategorisi
+    person_keywords = ["doğum", "birth", "ölüm", "death", "hayat", "life",
+                       "biyografi", "biography", "marie curie", "meslek", "occupation"]
+
+    # Kategori belirle
+    film_score = sum(1 for word in film_keywords if word in content_lower)
+    book_score = sum(1 for word in book_keywords if word in content_lower)
+    person_score = sum(1 for word in person_keywords if word in content_lower)
+
+    # En yüksek skora sahip kategoriyi döndür
+    if film_score > book_score and film_score > person_score:
+        return "film"
+    elif book_score > film_score and book_score > person_score:
+        return "book"
+    elif person_score > film_score and person_score > book_score:
+        return "person"
+
+    # Belirsizse "other" döndür
+    return "other"
+
+
+def detect_query_category(query: str) -> str:
     """
     Sorgu metnine göre belge kategorisini tespit eder.
     """
