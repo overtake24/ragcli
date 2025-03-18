@@ -1,0 +1,41 @@
+
+# Byte-compiled / cached files
+__pycache__/
+*.py[cod]
+
+# Log files
+*.log
+*.txt
+
+# Temporary files
+temp_docs/
+experiments/
+reports/
+
+# Virtual environment
+ragcli_env/
+
+# Database-related files
+*.sqlite
+*.db
+*.sql
+*.json
+
+# Shell script logs
+*.sh
+
+# Jupyter notebooks checkpoints
+.ipynb_checkpoints/
+
+# Editor ve IDE dosyaları
+.vscode/
+.idea/
+*.swp
+*~
+.DS_Store
+
+# Docker ve test dosyaları
+docker_*
+test_*
+run_tests.py
+
