@@ -39,3 +39,4 @@ docker_*
 test_*
 run_tests.py
 
+*.Zone.Identifier
